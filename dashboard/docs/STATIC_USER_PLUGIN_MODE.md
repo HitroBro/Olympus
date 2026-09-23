@@ -11,9 +11,9 @@ When `dashboard/dist/index.js` cannot load `/api/plugins/olympus/overview`, it s
 | `GET /api/dashboard/plugins` | Confirm Olympus manifest discovery, source, and `has_api` status. | Static User-Plugin Mode notice, Diagnostics evidence source |
 | `GET /api/status` | Show Hermes version/auth/gateway count shape when available. | Diagnostics evidence source |
 | `GET /api/profiles` | Count profiles without showing local profile names. | Agent Monitor count, Profile Fitness placeholder |
-| `GET /api/skills` | Count installed skills without showing skill names. | Skill Coverage/Hygiene count placeholders |
-| `GET /api/sessions/stats` | Count sessions without reading transcript bodies. | Performance Tracking session lane |
-| `GET /api/cron/jobs` | Count cron jobs without mutating schedule state. | Performance Tracking cron lane |
+| `GET /api/skills` | Count installed, enabled, and never-used skills plus provenance class counts (hub/bundled/agent), never showing skill names. | Skill Coverage/Hygiene count summaries |
+| `GET /api/sessions/stats` | Count sessions (total, active store, archived), message count, and source-kind count without reading transcript bodies. | Performance Tracking session lanes |
+| `GET /api/cron/jobs` | Count cron jobs and enabled/disabled split without showing job names or mutating schedule state. | Performance Tracking cron lane |
 
 ## Hidden or labelled in static mode
 

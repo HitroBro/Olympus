@@ -57,10 +57,11 @@ Complete each item in order and test before starting the next.
      trusted-backend mode; no new backend feature work.
    - Shipped: compatibility doc, `npm run test:compat` diagnostic, and the
      static frontend fallback.
-   - Remaining: expand static-mode panels only where first-party Hermes APIs
-     expose safe, count-level evidence; keep `plugin_api.py` compile-checked;
-     re-evaluate the backend path if Hermes gains a trusted backend-plugin
-     interface.
+   - Shipped: static-mode count aggregates for sessions (active/archived,
+     messages, source kinds), skills (enabled, never-used, provenance classes),
+     and cron (enabled/disabled), all validated against the Hermes source.
+   - Remaining: keep `plugin_api.py` compile-checked; re-evaluate the backend
+     path if Hermes gains a trusted backend-plugin interface.
 
 6. Deterministic Eval Signals
    - Shipped: local reliability, efficiency, routing, and skill-use eval signals.
