@@ -117,6 +117,15 @@
     const sessionStats = results.sessionStats && results.sessionStats.ok && results.sessionStats.value || {};
     const cronJobsRaw = results.cronJobs && results.cronJobs.ok && results.cronJobs.value;
     const cronJobs = Array.isArray(cronJobsRaw) ? cronJobsRaw : asList(cronJobsRaw && cronJobsRaw.jobs);
+    const cronEnabled = cronJobs.filter((job) => !job || job.enabled !== false).length;
+    const cronDisabled = cronJobs.length - cronEnabled;
+    const skillsEnabled = skills.filter((skill) => !skill || skill.enabled !== false).length;
+    const skillsNeverUsed = skills.filter((skill) => skill && Number(skill.usage || 0) === 0).length;
+    const skillProvenanceCounts = { hub: 0, bundled: 0, agent: 0 };
+    skills.forEach((skill) => {
+      const provenance = skill && typeof skill.provenance === "string" ? skill.provenance : "";
+      if (Object.prototype.hasOwnProperty.call(skillProvenanceCounts, provenance)) skillProvenanceCounts[provenance] += 1;
+    });
     const apiResults = [results.plugins, results.status, results.profiles, results.skills, results.sessionStats, results.cronJobs]
       .filter(Boolean);
     const availableCount = apiResults.filter((item) => item.ok).length;
@@ -180,10 +189,10 @@
       profile_fitness: { summary: { profiles: profiles.length, needs_review: profiles.length, average_score: 0, lowest_score: 0 }, profiles: profileRows },
       skill_coverage: {
         summary: { profiles: profiles.length, total_skills: skills.length, zero_skill_profiles: 0, forced_skill_tasks: 0, looping_sessions: 0, tool_heavy_sessions: 0, long_threads: 0, context_pressure_sessions: 0 },
-        suggestions: [{ kind: "compatibility", severity: "info", title: "Skill counts available; skill coverage synthesis unavailable", detail: "The frontend can read /api/skills, but repeated-use recommendations require the Olympus backend collectors.", evidence: formatCount(skills.length) + " skills returned by /api/skills", recommended_view: "/skills", action_label: "Open Skills" }],
+        suggestions: [{ kind: "compatibility", severity: "info", title: "Skill counts available; skill coverage synthesis unavailable", detail: "The frontend can read /api/skills, but per-profile repeated-use recommendations require the Olympus backend collectors.", evidence: formatCount(skills.length) + " skills (" + formatCount(skillsEnabled) + " enabled, " + formatCount(skillsNeverUsed) + " never used) from /api/skills; names hidden", recommended_view: "/skills", action_label: "Open Skills" }],
         profiles: []
       },
-      skill_hygiene: { summary: { state: "unknown", issues: 0, total_skills: skills.length, archived: 0, stale: 0, never_used: 0, recently_patched: 0, hub_installed: 0, hub_missing_trust: 0, hub_missing_scan: 0, hub_audit_pass: 0, hub_audit_warn: 0, hub_audit_fail: 0, forced_skill_metadata_gaps: 0 }, signals: [], usage: [], hub: [] },
+      skill_hygiene: { summary: { state: "unknown", issues: 0, total_skills: skills.length, archived: 0, stale: 0, never_used: skillsNeverUsed, recently_patched: 0, hub_installed: skillProvenanceCounts.hub, hub_missing_trust: 0, hub_missing_scan: 0, hub_audit_pass: 0, hub_audit_warn: 0, hub_audit_fail: 0, forced_skill_metadata_gaps: 0 }, signals: [], usage: [], hub: [] },
       performance: (() => {
         const totalSessions = Number(sessionStats.total || 0);
         const activeStore = Number(sessionStats.active_store || 0);
@@ -196,7 +205,7 @@
             { id: "sessions", label: "Sessions", value: totalSessions, unit: "count", state: totalSessions ? "active" : "idle", detail: "Count from /api/sessions/stats; no transcript content read.", source: "Hermes dashboard API", recommended_view: "/sessions" },
             { id: "sessions-active", label: "Active Store", value: activeStore, unit: "sessions", state: activeStore ? "active" : "idle", detail: formatCount(archivedSessions) + " archived; " + formatCount(sourceKinds) + " source kinds. Counts only; no session names.", source: "Hermes dashboard API", recommended_view: "/sessions" },
             { id: "messages", label: "Messages", value: totalMessages, unit: "count", state: totalMessages ? "active" : "idle", detail: "Message count only; message bodies are never read in static mode.", source: "Hermes dashboard API", recommended_view: "/sessions" },
-            { id: "cron", label: "Cron Jobs", value: cronJobs.length, unit: "count", state: cronJobs.length ? "active" : "idle", detail: "Job count from /api/cron/jobs; scheduling synthesis requires backend mode.", source: "Hermes dashboard API", recommended_view: "/cron" }
+            { id: "cron", label: "Cron Jobs", value: cronJobs.length, unit: "count", state: cronJobs.length ? "active" : "idle", detail: formatCount(cronEnabled) + " enabled / " + formatCount(cronDisabled) + " disabled from /api/cron/jobs; names hidden, scheduling synthesis requires backend mode.", source: "Hermes dashboard API", recommended_view: "/cron" }
           ],
           signals: []
         };
