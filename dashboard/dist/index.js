@@ -184,14 +184,23 @@
         profiles: []
       },
       skill_hygiene: { summary: { state: "unknown", issues: 0, total_skills: skills.length, archived: 0, stale: 0, never_used: 0, recently_patched: 0, hub_installed: 0, hub_missing_trust: 0, hub_missing_scan: 0, hub_audit_pass: 0, hub_audit_warn: 0, hub_audit_fail: 0, forced_skill_metadata_gaps: 0 }, signals: [], usage: [], hub: [] },
-      performance: {
-        summary: { state: "unknown", window_sessions: sessionStats.total || 0, completed_sessions: 0, total_tokens: 0, total_tool_calls: 0, avg_tools_per_session: 0, avg_tokens_per_call: 0, total_cost_usd: 0 },
-        lanes: [
-          { id: "sessions", label: "Sessions", value: sessionStats.total || 0, unit: "count", state: sessionStats.total ? "active" : "idle", detail: "Count from /api/sessions/stats; no transcript content read.", source: "Hermes dashboard API", recommended_view: "/sessions" },
-          { id: "cron", label: "Cron Jobs", value: cronJobs.length, unit: "count", state: cronJobs.length ? "active" : "idle", detail: "Job count from /api/cron/jobs; scheduling synthesis requires backend mode.", source: "Hermes dashboard API", recommended_view: "/cron" }
-        ],
-        signals: []
-      },
+      performance: (() => {
+        const totalSessions = Number(sessionStats.total || 0);
+        const activeStore = Number(sessionStats.active_store || 0);
+        const archivedSessions = Number(sessionStats.archived || 0);
+        const totalMessages = Number(sessionStats.messages || 0);
+        const sourceKinds = sessionStats.by_source && typeof sessionStats.by_source === "object" ? Object.keys(sessionStats.by_source).length : 0;
+        return {
+          summary: { state: "unknown", window_sessions: totalSessions, completed_sessions: 0, total_tokens: 0, total_tool_calls: 0, avg_tools_per_session: 0, avg_tokens_per_call: 0, total_cost_usd: 0 },
+          lanes: [
+            { id: "sessions", label: "Sessions", value: totalSessions, unit: "count", state: totalSessions ? "active" : "idle", detail: "Count from /api/sessions/stats; no transcript content read.", source: "Hermes dashboard API", recommended_view: "/sessions" },
+            { id: "sessions-active", label: "Active Store", value: activeStore, unit: "sessions", state: activeStore ? "active" : "idle", detail: formatCount(archivedSessions) + " archived; " + formatCount(sourceKinds) + " source kinds. Counts only; no session names.", source: "Hermes dashboard API", recommended_view: "/sessions" },
+            { id: "messages", label: "Messages", value: totalMessages, unit: "count", state: totalMessages ? "active" : "idle", detail: "Message count only; message bodies are never read in static mode.", source: "Hermes dashboard API", recommended_view: "/sessions" },
+            { id: "cron", label: "Cron Jobs", value: cronJobs.length, unit: "count", state: cronJobs.length ? "active" : "idle", detail: "Job count from /api/cron/jobs; scheduling synthesis requires backend mode.", source: "Hermes dashboard API", recommended_view: "/cron" }
+          ],
+          signals: []
+        };
+      })(),
       diagnostics: { state: "warning", generated_ms: 0, payload_bytes: 0, budgets: { api_response_ms: 750, client_render_ms: 150 }, budget_status: { api_response: "unknown", payload: "unknown" }, counts: { kanban_boards_scanned: 0, kanban_board_read_failures: 0 }, hermes: { version: status.version || "unknown" } },
       evidence_sources: {
         summary: { sources: frontendApis.length, available: availableCount, warnings: apiResults.length - availableCount, missing: 0 },
