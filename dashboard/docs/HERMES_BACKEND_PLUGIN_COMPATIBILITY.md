@@ -36,23 +36,22 @@ or Hermes adds an explicit trusted backend-plugin model.
 
 | Mode | Static tab | `/api/plugins/olympus/*` backend | Status |
 | --- | --- | --- | --- |
-| User dashboard plugin under `$HERMES_HOME/plugins` | Yes | No | Static UI only on current Hermes |
-| Bundled Hermes plugin under `hermes-agent/plugins/olympus/dashboard` | Yes | Yes | Preferred full integration path |
+| User dashboard plugin under `$HERMES_HOME/plugins` | Yes | No | Supported path (frontend-only) |
+| Bundled Hermes plugin under `hermes-agent/plugins/olympus/dashboard` | Yes | Yes | Future option; not in scope |
 | Future trusted backend-plugin API | Yes | Yes | Requires upstream Hermes design/security approval |
 | Separate local service + static plugin | Yes | External only | Possible, but adds auth/daemon burden |
 
 ## Recommended Architecture
 
-The cleanest production path is to upstream Olympus as a bundled Hermes dashboard
-plugin or first upstream a safe trusted-backend plugin model.
+Olympus is a **frontend-only user dashboard plugin**. The static user-plugin
+mode is the supported experience; new frontend work consumes only first-party
+Hermes dashboard APIs through the plugin SDK's `fetchJSON`. See
+[`BACKEND_COMPATIBILITY_DECISION.md`](BACKEND_COMPATIBILITY_DECISION.md).
 
-Short term, Olympus should be treated as:
-
-```text
-read-only monitor + architecture prototype
-```
-
-not as a fully working external backend plugin on hardened Hermes.
+Bundling Olympus into Hermes or upstreaming a trusted backend-plugin model
+remains a possible future option. `dashboard/plugin_api.py` stays in the repo
+as a reference/prototype for that path but is not supported for user-plugin
+installs on hardened Hermes.
 
 ## Smoke-Test Interpretation
 
