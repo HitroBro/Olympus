@@ -16,13 +16,15 @@ When `dashboard/dist/index.js` cannot load `/api/plugins/olympus/overview`, it s
 | `GET /api/sessions/stats` | Count sessions (total, active store, archived), message count, and source-kind count without reading transcript bodies. | Performance Tracking session lanes |
 | `GET /api/cron/jobs` | Count cron jobs and enabled/disabled split without showing job names or mutating schedule state. | Performance Tracking cron lane |
 | `GET /api/tools/toolsets` | Count toolsets and enabled/disabled split without exposing keys or parameters. | Tool Policy toolset count and setting lane |
+| `GET /api/plugins/kanban/stats` | Count Kanban tasks (open, ready, running, blocked, done) and assignee distribution without exposing private task titles or details. | Kanban Intelligence counts and assignee load |
+| `GET /api/plugins/kanban/orchestration` | Dispatcher settings (auto decompose, auto promote children) without mutating dispatcher behavior. | Kanban Intelligence dispatcher settings, Diagnostics evidence source |
 
 ## Hidden or labelled in static mode
 
 These panels require bundled/trusted Olympus backend synthesis and are hidden, empty, or explicitly labelled as unavailable in the fallback:
 
 - Readiness scoring and score deductions.
-- Kanban board synthesis, Trace Spine, and worker attention items.
+- Deep Kanban task/run correlation (Trace Spine) and deep worker attention items.
 - Skill hygiene/audit synthesis and profile fitness scoring.
 - Tool policy, config risk, and auxiliary cost recommendations.
 - Operational evals and production diagnostics from Olympus evidence collectors.

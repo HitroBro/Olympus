@@ -112,7 +112,7 @@ Frontend:
 - Explain the top issue without exposing private local labels by default.
 - Link to the Hermes page that owns the fix.
 
-### 3. Kanban Worker Inspector (partially shipped)
+### 3. Kanban Worker Inspector (shipped)
 
 - Shipped: Kanban Intelligence summarizes open, ready, running, blocked, review,
   active workers, stale workers, failed runs, assignee load, and attention
@@ -120,8 +120,8 @@ Frontend:
 - Shipped: Trace Spine V0 correlates Kanban task refs, task runs, task events,
   and Hermes session refs, then summarizes failure points without transcript
   content.
-- Remaining: dispatcher/orchestration settings evidence when Hermes exposes it
-  as safe read-only metadata.
+- Shipped: dispatcher/orchestration settings evidence (`auto_decompose`,
+  `auto_promote_children`) via `/api/plugins/kanban/orchestration` in static fallback mode.
 - Keep action buttons as handoff links until a write action is approved.
 
 ### 4. Pantheon V2 Visual Restoration (shipped)

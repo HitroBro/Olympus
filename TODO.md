@@ -28,10 +28,10 @@ Complete each item in order and test before starting the next.
    - Privacy regression checks now run in `npm run verify`.
    - Live smoke verifies Brief mode first, then clicks each staged dashboard mode.
 
-1. Kanban Worker Inspector (partial)
+1. Kanban Worker Inspector (shipped)
    - Shipped: board pressure, blocked work, active workers, stale workers, failed runs, and assignee load.
    - Shipped: Trace Spine V0 links tasks to sessions, task runs, and task events with safe refs.
-   - Remaining: dispatcher/orchestration settings evidence.
+   - Shipped: dispatcher/orchestration settings evidence (`auto_decompose`, `auto_promote_children`) via `/api/plugins/kanban/orchestration` in static fallback mode.
 
 2. Curator and Skill Hygiene (partial)
    - Shipped: usage/provenance, stale/archive/patch counts, hub trust, scan gaps, and stored skills.sh audit status when Hermes records it.
@@ -60,8 +60,10 @@ Complete each item in order and test before starting the next.
      static frontend fallback.
    - Shipped: static-mode count aggregates for sessions (active/archived,
      messages, source kinds), skills (enabled, never-used, provenance classes),
-     cron (enabled/disabled), curator (maintenance state/interval), and
-     toolsets (enabled/total counts), all validated against the Hermes source.
+     cron (enabled/disabled), curator (maintenance state/interval),
+     toolsets (enabled/total counts), Kanban task stats (totals, boards,
+     assignee load), and dispatcher settings (`auto_decompose`,
+     `auto_promote_children`), all validated against the Hermes source.
    - Remaining: keep `plugin_api.py` compile-checked; re-evaluate the backend
      path if Hermes gains a trusted backend-plugin interface.
 

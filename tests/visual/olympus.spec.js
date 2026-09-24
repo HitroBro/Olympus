@@ -323,6 +323,12 @@ test("static user-plugin mode falls back to Hermes dashboard APIs", async ({ pag
   await expect(page.locator(".olympus-agent-hq")).toContainText("Static user-plugin mode detected");
   await selectMode(page, "Skills");
   await expect(page.locator(".olympus-skill-hygiene")).toContainText("Background skill maintenance active");
+  await selectMode(page, "Kanban");
+  await expect(page.locator(".olympus-kanban")).toBeVisible();
+  await expect(page.locator(".olympus-kanban")).toContainText("Kanban Intelligence");
+  await expect(page.locator(".olympus-kanban")).toContainText("Kanban Board");
+  await expect(page.locator(".olympus-kanban")).toContainText("Dispatcher Settings");
+  await expect(page.locator(".olympus-kanban")).toContainText("Auto Decompose");
   await selectMode(page, "Policy");
   await expect(page.locator(".olympus-policy")).toContainText("2 / 2 enabled");
   await selectMode(page, "Diagnostics");
@@ -330,4 +336,6 @@ test("static user-plugin mode falls back to Hermes dashboard APIs", async ({ pag
   await expect(page.locator(".olympus-diagnostics")).toContainText("/api/status");
   await expect(page.locator(".olympus-diagnostics")).toContainText("/api/curator");
   await expect(page.locator(".olympus-diagnostics")).toContainText("/api/tools/toolsets");
+  await expect(page.locator(".olympus-diagnostics")).toContainText("/api/plugins/kanban/stats");
+  await expect(page.locator(".olympus-diagnostics")).toContainText("/api/plugins/kanban/orchestration");
 });

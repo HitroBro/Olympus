@@ -150,6 +150,181 @@
     const toolsetsRaw = results.toolsets && results.toolsets.ok && results.toolsets.value;
     const toolsets = asList(toolsetsRaw);
     const toolsetsEnabled = toolsets.filter((t) => t && (t.is_enabled !== false && t.enabled !== false)).length;
+    const kanbanStats = results.kanbanStats && results.kanbanStats.ok && results.kanbanStats.value || null;
+    const kanbanOrch = results.kanbanOrchestration && results.kanbanOrchestration.ok && results.kanbanOrchestration.value || null;
+    const profileNameMap = {};
+    profiles.forEach((p, idx) => {
+      if (p && p.name) profileNameMap[p.name] = "Profile " + String(idx + 1);
+    });
+
+    let kanbanData = null;
+    let orchestrationData = null;
+
+    if (kanbanStats) {
+      const byStatus = kanbanStats.by_status && typeof kanbanStats.by_status === "object" ? kanbanStats.by_status : {};
+      const byAssignee = kanbanStats.by_assignee && typeof kanbanStats.by_assignee === "object" ? kanbanStats.by_assignee : {};
+      const openCount = ["triage", "todo", "scheduled", "ready", "running", "blocked", "review"].reduce(
+        (sum, s) => sum + Number(byStatus[s] || 0), 0
+      );
+      const readyCount = Number(byStatus.ready || 0);
+      const runningCount = Number(byStatus.running || 0);
+      const blockedCount = Number(byStatus.blocked || 0);
+      const reviewCount = Number(byStatus.review || 0);
+      const todoCount = Number(byStatus.todo || 0);
+      const doneCount = Number(byStatus.done || 0);
+
+      const assigneeRows = Object.entries(byAssignee).map(([assignee, counts], idx) => {
+        const c = counts && typeof counts === "object" ? counts : {};
+        const open = ["triage", "todo", "scheduled", "ready", "running", "blocked", "review"].reduce(
+          (sum, s) => sum + Number(c[s] || 0), 0
+        );
+        const mappedAssignee = profileNameMap[assignee] || (assignee === "unassigned" ? "unassigned" : "Profile " + String(idx + 1));
+        return {
+          id: "assignee:" + idx,
+          assignee: mappedAssignee,
+          open,
+          running: Number(c.running || 0),
+          ready: Number(c.ready || 0),
+          blocked: Number(c.blocked || 0),
+          review: Number(c.review || 0),
+          todo: Number(c.todo || 0)
+        };
+      });
+
+      const kanbanAttention = [];
+      if (blockedCount > 0) {
+        kanbanAttention.push({
+          severity: "warning",
+          label: "Blocked work",
+          detail: formatCount(blockedCount) + " blocked " + (blockedCount === 1 ? "task" : "tasks") + " on the board.",
+          board: "Kanban board"
+        });
+      }
+      if (kanbanStats.oldest_ready_age_seconds && Number(kanbanStats.oldest_ready_age_seconds) > 86400) {
+        kanbanAttention.push({
+          severity: "info",
+          label: "Oldest ready work",
+          detail: "Ready work waiting for pickup (" + formatDuration(kanbanStats.oldest_ready_age_seconds) + ").",
+          board: "Kanban board"
+        });
+      }
+
+      const kanbanSettings = kanbanOrch ? [
+        {
+          id: "auto_decompose",
+          label: "Auto Decompose",
+          value: kanbanOrch.auto_decompose ? "enabled" : "disabled",
+          detail: "Dispatcher task decomposition setting.",
+          source: "Hermes Kanban plugin",
+          state: kanbanOrch.auto_decompose ? "active" : "idle"
+        },
+        {
+          id: "auto_promote_children",
+          label: "Auto Promote Children",
+          value: kanbanOrch.auto_promote_children ? "enabled" : "disabled",
+          detail: "Dispatcher child task promotion setting.",
+          source: "Hermes Kanban plugin",
+          state: kanbanOrch.auto_promote_children ? "active" : "idle"
+        }
+      ] : [];
+
+      kanbanData = {
+        open: openCount,
+        totals: {
+          triage: Number(byStatus.triage || 0),
+          todo: todoCount,
+          scheduled: Number(byStatus.scheduled || 0),
+          ready: readyCount,
+          running: runningCount,
+          blocked: blockedCount,
+          review: reviewCount,
+          done: doneCount
+        },
+        boards: [
+          {
+            slug: "default",
+            name: "Kanban Board",
+            open: openCount,
+            counts: {
+              ready: readyCount,
+              running: runningCount,
+              blocked: blockedCount,
+              todo: todoCount
+            }
+          }
+        ],
+        assignee_load: assigneeRows,
+        attention: kanbanAttention,
+        active_workers: [],
+        settings: kanbanSettings
+      };
+
+      orchestrationData = {
+        summary: {
+          boards: 1,
+          open: openCount,
+          ready: readyCount,
+          running: runningCount,
+          blocked: blockedCount,
+          review: reviewCount,
+          active_workers: 0,
+          failed_runs: 0,
+          stale_workers: 0,
+          auto_decompose: kanbanOrch ? Boolean(kanbanOrch.auto_decompose) : null,
+          auto_promote_children: kanbanOrch ? Boolean(kanbanOrch.auto_promote_children) : null
+        },
+        settings: kanbanSettings,
+        pressure: assigneeRows,
+        attention: kanbanAttention
+      };
+    } else if (kanbanOrch) {
+      const kanbanSettings = [
+        {
+          id: "auto_decompose",
+          label: "Auto Decompose",
+          value: kanbanOrch.auto_decompose ? "enabled" : "disabled",
+          detail: "Dispatcher task decomposition setting.",
+          source: "Hermes Kanban plugin",
+          state: kanbanOrch.auto_decompose ? "active" : "idle"
+        },
+        {
+          id: "auto_promote_children",
+          label: "Auto Promote Children",
+          value: kanbanOrch.auto_promote_children ? "enabled" : "disabled",
+          detail: "Dispatcher child task promotion setting.",
+          source: "Hermes Kanban plugin",
+          state: kanbanOrch.auto_promote_children ? "active" : "idle"
+        }
+      ];
+      kanbanData = {
+        open: 0,
+        totals: {},
+        boards: [],
+        assignee_load: [],
+        attention: [],
+        active_workers: [],
+        settings: kanbanSettings
+      };
+      orchestrationData = {
+        summary: {
+          boards: 0,
+          open: 0,
+          ready: 0,
+          running: 0,
+          blocked: 0,
+          review: 0,
+          active_workers: 0,
+          failed_runs: 0,
+          stale_workers: 0,
+          auto_decompose: Boolean(kanbanOrch.auto_decompose),
+          auto_promote_children: Boolean(kanbanOrch.auto_promote_children)
+        },
+        settings: kanbanSettings,
+        pressure: [],
+        attention: []
+      };
+    }
+
     const apiResults = [
       results.plugins,
       results.status,
@@ -158,7 +333,9 @@
       results.curator,
       results.sessionStats,
       results.cronJobs,
-      results.toolsets
+      results.toolsets,
+      results.kanbanStats,
+      results.kanbanOrchestration
     ].filter(Boolean);
     const availableCount = apiResults.filter((item) => item.ok).length;
     const frontendApis = apiResults.map((item) => ({
@@ -169,7 +346,7 @@
       counts: item.ok ? { responses: 1 } : { errors: 1 },
       fields: item.ok ? ["read-only JSON"] : [],
       redaction: item.ok ? "available" : item.error || "unavailable",
-      recommended_view: item.path === "/api/dashboard/plugins" ? "/config" : ""
+      recommended_view: item.path === "/api/dashboard/plugins" ? "/config" : (String(item.path).includes("/kanban") ? "/kanban" : "")
     }));
     const profileRows = profiles.slice(0, 6).map((profile, idx) => ({
       id: "profile:" + idx,
@@ -187,7 +364,18 @@
       static_compatibility: {
         enabled: true,
         reason: reason || "Olympus backend route unavailable",
-        frontend_available: ["/api/dashboard/plugins", "/api/status", "/api/profiles", "/api/skills", "/api/curator", "/api/sessions/stats", "/api/cron/jobs", "/api/tools/toolsets"],
+        frontend_available: [
+          "/api/dashboard/plugins",
+          "/api/status",
+          "/api/profiles",
+          "/api/skills",
+          "/api/curator",
+          "/api/sessions/stats",
+          "/api/cron/jobs",
+          "/api/tools/toolsets",
+          "/api/plugins/kanban/stats",
+          "/api/plugins/kanban/orchestration"
+        ],
         backend_required: STATIC_BACKEND_REQUIRED
       },
       health: {
@@ -295,9 +483,9 @@
       ops_evals: null,
       metrics_spine: null,
       trace_spine: null,
-      kanban: null,
+      kanban: kanbanData,
       party: null,
-      orchestration: null,
+      orchestration: orchestrationData,
       activity_events: []
     };
   }
@@ -311,7 +499,9 @@
       safeFetchJSON("/api/curator"),
       safeFetchJSON("/api/sessions/stats"),
       safeFetchJSON("/api/cron/jobs"),
-      safeFetchJSON("/api/tools/toolsets")
+      safeFetchJSON("/api/tools/toolsets"),
+      safeFetchJSON("/api/plugins/kanban/stats"),
+      safeFetchJSON("/api/plugins/kanban/orchestration")
     ]).then((items) => buildStaticCompatibilityData(reason, {
       plugins: items[0],
       status: items[1],
@@ -320,7 +510,9 @@
       curator: items[4],
       sessionStats: items[5],
       cronJobs: items[6],
-      toolsets: items[7]
+      toolsets: items[7],
+      kanbanStats: items[8],
+      kanbanOrchestration: items[9]
     }));
   }
 
@@ -1338,18 +1530,20 @@
     );
   }
 
-  function KanbanIntelligence({ kanban }) {
+  function KanbanIntelligence({ kanban, orchestration }) {
     const data = kanban || {};
     const totals = data.totals || {};
     const boards = asList(data.boards);
     const attention = asList(data.attention);
     const assignees = asList(data.assignee_load);
     const workers = asList(data.active_workers);
+    const orch = orchestration || {};
+    const settings = asList(orch.settings || data.settings);
     const totalBoards = boards.length;
     const open = Number(data.open || 0);
     const blocked = Number(totals.blocked || 0);
     const ready = Number(totals.ready || 0);
-    const hasSignal = totalBoards || open || blocked || ready || workers.length || attention.length;
+    const hasSignal = totalBoards || open || blocked || ready || workers.length || attention.length || settings.length;
 
     if (!hasSignal) return null;
 
@@ -1409,7 +1603,15 @@
             el("small", null, [item.board, item.detail].filter(Boolean).join(" / ")),
             el(Badge, { className: severityClass(item.severity) }, item.severity || "info")
           )) : el("p", { className: "olympus-muted" }, "No blocked, stale, failed, or unassigned Kanban work detected.")
-        )
+        ),
+        settings.length ? el("div", { className: "olympus-evidence-pane" },
+          el("h3", null, "Dispatcher Settings"),
+          settings.map((item) => el("div", { key: item.id || item.label, className: "olympus-mini-row" },
+            el("span", null, item.label),
+            el("small", null, item.detail || item.source),
+            el(StatePill, { state: item.state || (item.value === "enabled" ? "active" : "idle"), label: item.value || item.state })
+          ))
+        ) : null
       )
     );
   }
@@ -1500,7 +1702,7 @@
       ),
       el(ModePanel, { id: "kanban", activeMode },
         el(TraceSpine, { trace: data && data.trace_spine }),
-        el(KanbanIntelligence, { kanban: data && data.kanban })
+        el(KanbanIntelligence, { kanban: data && data.kanban, orchestration: data && data.orchestration })
       ),
       el(ModePanel, { id: "policy", activeMode },
         el(ToolPolicy, { policy: data && data.config_policy })

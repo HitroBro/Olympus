@@ -120,7 +120,20 @@
           "/api/curator": { enabled: true, paused: false, interval_hours: 168, last_run_at: "2026-09-23T10:00:00Z" },
           "/api/sessions/stats": { total: 3, active_store: 3, archived: 0, messages: 12 },
           "/api/cron/jobs": { jobs: [{ id: "job-one" }] },
-          "/api/tools/toolsets": [{ name: "web", is_enabled: true }, { name: "cli", is_enabled: true }]
+          "/api/tools/toolsets": [{ name: "web", is_enabled: true }, { name: "cli", is_enabled: true }],
+          "/api/plugins/kanban/stats": {
+            by_status: { todo: 2, ready: 1, running: 1, blocked: 0, done: 4 },
+            by_assignee: { default: { todo: 2, ready: 1, running: 1 } },
+            oldest_ready_age_seconds: 300,
+            now: 1727167000
+          },
+          "/api/plugins/kanban/orchestration": {
+            auto_decompose: true,
+            auto_promote_children: true,
+            resolved_orchestrator_profile: "default",
+            resolved_default_assignee: "default",
+            active_profile: "default"
+          }
         };
         return responses[String(url).split("?")[0]] || {};
       }
