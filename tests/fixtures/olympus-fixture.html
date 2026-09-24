@@ -117,8 +117,10 @@
           "/api/status": { version: "fixture", gateway_platforms: {}, active_sessions: 1 },
           "/api/profiles": { profiles: [{ name: "default" }, { name: "vulcan", is_active: true }] },
           "/api/skills": [{ name: "skill-one" }, { name: "skill-two" }],
+          "/api/curator": { enabled: true, paused: false, interval_hours: 168, last_run_at: "2026-09-23T10:00:00Z" },
           "/api/sessions/stats": { total: 3, active_store: 3, archived: 0, messages: 12 },
-          "/api/cron/jobs": { jobs: [{ id: "job-one" }] }
+          "/api/cron/jobs": { jobs: [{ id: "job-one" }] },
+          "/api/tools/toolsets": [{ name: "web", is_enabled: true }, { name: "cli", is_enabled: true }]
         };
         return responses[String(url).split("?")[0]] || {};
       }

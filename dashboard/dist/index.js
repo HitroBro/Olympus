@@ -126,8 +126,40 @@
       const provenance = skill && typeof skill.provenance === "string" ? skill.provenance : "";
       if (Object.prototype.hasOwnProperty.call(skillProvenanceCounts, provenance)) skillProvenanceCounts[provenance] += 1;
     });
-    const apiResults = [results.plugins, results.status, results.profiles, results.skills, results.sessionStats, results.cronJobs]
-      .filter(Boolean);
+    const curator = results.curator && results.curator.ok && results.curator.value || null;
+    const curatorSignals = [];
+    if (curator && typeof curator === "object") {
+      const curatorPaused = Boolean(curator.paused);
+      const curatorEnabled = curator.enabled !== false && !curatorPaused;
+      const curatorInterval = Number(curator.interval_hours || 0);
+      const curatorLastRun = curator.last_run_at ? String(curator.last_run_at) : null;
+      curatorSignals.push({
+        kind: "curator",
+        severity: curatorPaused ? "warning" : "info",
+        title: curatorPaused ? "Skill auto-maintenance paused" : (curatorEnabled ? "Background skill maintenance active" : "Background skill maintenance disabled"),
+        detail: curatorPaused
+          ? "Curator automatic skill maintenance is paused. Inactive skills will not be auto-archived."
+          : (curatorEnabled
+            ? "Background maintenance runs every " + (curatorInterval ? curatorInterval + "h" : "cycle") + " when idle to transition inactive skills."
+            : "Automatic skill maintenance is disabled."),
+        evidence: "From /api/curator" + (curatorLastRun ? "; last run: " + curatorLastRun : "; never run"),
+        recommended_view: "/skills",
+        action_label: "Open Skills"
+      });
+    }
+    const toolsetsRaw = results.toolsets && results.toolsets.ok && results.toolsets.value;
+    const toolsets = asList(toolsetsRaw);
+    const toolsetsEnabled = toolsets.filter((t) => t && (t.is_enabled !== false && t.enabled !== false)).length;
+    const apiResults = [
+      results.plugins,
+      results.status,
+      results.profiles,
+      results.skills,
+      results.curator,
+      results.sessionStats,
+      results.cronJobs,
+      results.toolsets
+    ].filter(Boolean);
     const availableCount = apiResults.filter((item) => item.ok).length;
     const frontendApis = apiResults.map((item) => ({
       id: item.path,
@@ -155,7 +187,7 @@
       static_compatibility: {
         enabled: true,
         reason: reason || "Olympus backend route unavailable",
-        frontend_available: ["/api/dashboard/plugins", "/api/status", "/api/profiles", "/api/skills", "/api/sessions/stats", "/api/cron/jobs"],
+        frontend_available: ["/api/dashboard/plugins", "/api/status", "/api/profiles", "/api/skills", "/api/curator", "/api/sessions/stats", "/api/cron/jobs", "/api/tools/toolsets"],
         backend_required: STATIC_BACKEND_REQUIRED
       },
       health: {
@@ -192,7 +224,27 @@
         suggestions: [{ kind: "compatibility", severity: "info", title: "Skill counts available; skill coverage synthesis unavailable", detail: "The frontend can read /api/skills, but per-profile repeated-use recommendations require the Olympus backend collectors.", evidence: formatCount(skills.length) + " skills (" + formatCount(skillsEnabled) + " enabled, " + formatCount(skillsNeverUsed) + " never used) from /api/skills; names hidden", recommended_view: "/skills", action_label: "Open Skills" }],
         profiles: []
       },
-      skill_hygiene: { summary: { state: "unknown", issues: 0, total_skills: skills.length, archived: 0, stale: 0, never_used: skillsNeverUsed, recently_patched: 0, hub_installed: skillProvenanceCounts.hub, hub_missing_trust: 0, hub_missing_scan: 0, hub_audit_pass: 0, hub_audit_warn: 0, hub_audit_fail: 0, forced_skill_metadata_gaps: 0 }, signals: [], usage: [], hub: [] },
+      skill_hygiene: {
+        summary: {
+          state: curator && curator.paused ? "warning" : (skills.length ? "active" : "unknown"),
+          issues: curator && curator.paused ? 1 : 0,
+          total_skills: skills.length,
+          archived: 0,
+          stale: 0,
+          never_used: skillsNeverUsed,
+          recently_patched: 0,
+          hub_installed: skillProvenanceCounts.hub,
+          hub_missing_trust: 0,
+          hub_missing_scan: 0,
+          hub_audit_pass: 0,
+          hub_audit_warn: 0,
+          hub_audit_fail: 0,
+          forced_skill_metadata_gaps: 0
+        },
+        signals: curatorSignals,
+        usage: [],
+        hub: []
+      },
       performance: (() => {
         const totalSessions = Number(sessionStats.total || 0);
         const activeStore = Number(sessionStats.active_store || 0);
@@ -216,8 +268,28 @@
         items: [{ id: "olympus-manifest", label: "Olympus manifest", type: "dashboard plugin discovery", state: olympus ? "ok" : "warning", counts: { plugins: plugins.length }, fields: olympus ? ["source: " + (olympus.source || "unknown"), "has_api: " + String(Boolean(olympus.has_api))] : [], redaction: olympus ? "Manifest visible through /api/dashboard/plugins." : "Olympus manifest not found in /api/dashboard/plugins.", recommended_view: "/config" }, ...frontendApis]
       },
       config_policy: {
-        summary: { state: "warning", findings: 1, toolsets: 0, enabled_toolsets: 0, risky_toolsets: 0, max_turns: 0, aux_configured: 0, aux_missing: 0, gateway_platforms: Object.keys(status.gateway_platforms || {}).length, browser_privacy_flags: 0 },
-        settings: [],
+        summary: {
+          state: "warning",
+          findings: 1,
+          toolsets: toolsets.length,
+          enabled_toolsets: toolsetsEnabled,
+          risky_toolsets: 0,
+          max_turns: 0,
+          aux_configured: 0,
+          aux_missing: 0,
+          gateway_platforms: Object.keys(status.gateway_platforms || {}).length,
+          browser_privacy_flags: 0
+        },
+        settings: toolsets.length ? [
+          {
+            id: "toolsets",
+            label: "Toolsets",
+            value: formatCount(toolsetsEnabled) + " / " + formatCount(toolsets.length) + " enabled",
+            detail: "Count from /api/tools/toolsets; secret keys and config hidden.",
+            source: "Hermes dashboard API",
+            state: toolsetsEnabled ? "active" : "idle"
+          }
+        ] : [],
         findings: [{ kind: "compatibility", severity: "warning", title: "Policy synthesis hidden in static mode", detail: "The frontend does not inspect config/env details directly. Use Hermes-owned config pages or bundled Olympus backend mode.", evidence: "Static compatibility fallback", recommended_view: "/config", action_label: "Open Config" }]
       },
       ops_evals: null,
@@ -236,9 +308,20 @@
       safeFetchJSON("/api/status"),
       safeFetchJSON("/api/profiles"),
       safeFetchJSON("/api/skills"),
+      safeFetchJSON("/api/curator"),
       safeFetchJSON("/api/sessions/stats"),
-      safeFetchJSON("/api/cron/jobs")
-    ]).then((items) => buildStaticCompatibilityData(reason, { plugins: items[0], status: items[1], profiles: items[2], skills: items[3], sessionStats: items[4], cronJobs: items[5] }));
+      safeFetchJSON("/api/cron/jobs"),
+      safeFetchJSON("/api/tools/toolsets")
+    ]).then((items) => buildStaticCompatibilityData(reason, {
+      plugins: items[0],
+      status: items[1],
+      profiles: items[2],
+      skills: items[3],
+      curator: items[4],
+      sessionStats: items[5],
+      cronJobs: items[6],
+      toolsets: items[7]
+    }));
   }
 
   function StaticCompatibilityNotice({ compatibility }) {

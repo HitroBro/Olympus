@@ -12,8 +12,10 @@ When `dashboard/dist/index.js` cannot load `/api/plugins/olympus/overview`, it s
 | `GET /api/status` | Show Hermes version/auth/gateway count shape when available. | Diagnostics evidence source |
 | `GET /api/profiles` | Count profiles without showing local profile names. | Agent Monitor count, Profile Fitness placeholder |
 | `GET /api/skills` | Count installed, enabled, and never-used skills plus provenance class counts (hub/bundled/agent), never showing skill names. | Skill Coverage/Hygiene count summaries |
+| `GET /api/curator` | Background skill maintenance status (enabled, paused, interval) without modifying state. | Skill Hygiene maintenance signal |
 | `GET /api/sessions/stats` | Count sessions (total, active store, archived), message count, and source-kind count without reading transcript bodies. | Performance Tracking session lanes |
 | `GET /api/cron/jobs` | Count cron jobs and enabled/disabled split without showing job names or mutating schedule state. | Performance Tracking cron lane |
+| `GET /api/tools/toolsets` | Count toolsets and enabled/disabled split without exposing keys or parameters. | Tool Policy toolset count and setting lane |
 
 ## Hidden or labelled in static mode
 

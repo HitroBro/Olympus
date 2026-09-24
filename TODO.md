@@ -35,7 +35,8 @@ Complete each item in order and test before starting the next.
 
 2. Curator and Skill Hygiene (partial)
    - Shipped: usage/provenance, stale/archive/patch counts, hub trust, scan gaps, and stored skills.sh audit status when Hermes records it.
-   - Remaining: a Curator route when Hermes exposes one.
+   - Shipped: `/api/curator` status consumption in static user-plugin mode (active/paused/interval signals).
+   - Remaining: a Curator route when Hermes exposes one in bundled backend mode.
 
 3. Trace Spine V0 (shipped)
    - Correlates sessions, Kanban tasks, task runs, and task events.
@@ -59,7 +60,8 @@ Complete each item in order and test before starting the next.
      static frontend fallback.
    - Shipped: static-mode count aggregates for sessions (active/archived,
      messages, source kinds), skills (enabled, never-used, provenance classes),
-     and cron (enabled/disabled), all validated against the Hermes source.
+     cron (enabled/disabled), curator (maintenance state/interval), and
+     toolsets (enabled/total counts), all validated against the Hermes source.
    - Remaining: keep `plugin_api.py` compile-checked; re-evaluate the backend
      path if Hermes gains a trusted backend-plugin interface.
 
