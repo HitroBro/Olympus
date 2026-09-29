@@ -321,6 +321,11 @@ test("static user-plugin mode falls back to Hermes dashboard APIs", async ({ pag
   await expect(page.locator(".olympus-static-compatibility")).toContainText("/api/dashboard/plugins");
   await expect(page.locator(".olympus-static-compatibility")).toContainText("Readiness scoring and score deductions");
   await expect(page.locator(".olympus-agent-hq")).toContainText("Static user-plugin mode detected");
+  await selectMode(page, "Agents");
+  await expect(page.locator(".olympus-performance")).toBeVisible();
+  await expect(page.locator(".olympus-performance")).toContainText("Sessions");
+  await expect(page.locator(".olympus-profile-fitness")).toBeVisible();
+  await expect(page.locator(".olympus-profile-fitness")).toContainText("Profile 1");
   await selectMode(page, "Skills");
   await expect(page.locator(".olympus-skill-hygiene")).toContainText("Background skill maintenance active");
   await selectMode(page, "Kanban");
